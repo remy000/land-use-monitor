@@ -11,3 +11,11 @@ dependencies = [
     "pillow>=12.3.0",
 ]
 
+[dependency-groups]
+ml = [
+    "ipykernel>=7.4.0",
+    "matplotlib>=3.11.2",
+    "torch>=2.14.0",
+    "torchvision>=0.29.0",
+]
+
