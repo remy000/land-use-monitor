@@ -6,6 +6,9 @@ dist/
 wheels/
 data/
 /models/*
+mlruns/
+mlartifacts/
+mlflow.db
 *.egg-info
 
 # Virtual environments

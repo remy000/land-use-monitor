@@ -5,6 +5,9 @@ import torch
 from torch import nn
 from ml.data import build_dataloaders
 from ml.model import build_model
+import subprocess
+import mlflow
+from ml.export import export_onnx, verify_onnx
 
 NUM_CLASSES = 10
 
@@ -20,7 +23,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lr", type=float, default=1e-3)   
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument(
-        "--max_batches", type=int, default=None, help="Stop each epoch after this many batches (for quick local tests)"
+        "--max-batches", type=int, default=None, help="Stop each epoch after this many batches (for quick local tests)"
     )
     parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
@@ -71,6 +74,13 @@ def evaluate(model, loader, criterion, device, max_batches=None):
     return {"loss": total_loss / total, "accuracy": correct / total}
 
 
+def git_commit()->str:
+    try:
+        return subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return "unknown"
+
+
 def main()->None:
     args=parse_args()
     torch.manual_seed(args.seed)
@@ -92,31 +102,69 @@ def main()->None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)   
     best_val_accuracy = 0.0
+
     history=[]
 
-    for epoch in range(1, args.epochs+1):
-        train_metrics = train_one_epoch(
-            model, loaders["train"], criterion, optimizer, device, max_batches=args.max_batches
-        )
-        val_metrics = evaluate(
-            model, loaders["val"], criterion, device, max_batches=args.max_batches
-        )
-        scheduler.step()
+    mlflow.set_experiment("eurosat_training")
+    with mlflow.start_run():
+        mlflow.log_params(vars(args))
+        mlflow.set_tag("git_commit", git_commit())
+        mlflow.set_tag("device", str(device))
 
-        history.append({"epoch": epoch, "train_metrics": train_metrics, "val_metrics": val_metrics})
-        print(
-            f"Epoch {epoch}/{args.epochs} - "
-            f"Train Loss: {train_metrics['loss']:.4f}, Train Acc: {train_metrics['accuracy']:.4f} - "
-            f"Val Loss: {val_metrics['loss']:.4f}, Val Acc: {val_metrics['accuracy']:.4f}"
-        )
+        for epoch in range(1, args.epochs+1):
+            lr=optimizer.param_groups[0]["lr"]
 
-        if val_metrics["accuracy"] > best_val_accuracy:
-            best_val_accuracy = val_metrics["accuracy"]
-            torch.save(model.state_dict(), output_dir / "best_model.pth")
-            print(f" Saved best model with val accuracy: {best_val_accuracy:.4f}")
+            train_metrics = train_one_epoch(
+                model, loaders["train"], criterion, optimizer, device, max_batches=args.max_batches
+            )
+            val_metrics = evaluate(
+                model, loaders["val"], criterion, device, max_batches=args.max_batches
+            )
+            scheduler.step()
 
-    (output_dir / "history.json").write_text(json.dumps(history, indent=2))
-    print(f"Done. Best validation accuracy: {best_val_accuracy:.4f}")
+            history.append({"epoch": epoch, "train_metrics": train_metrics, "val_metrics": val_metrics})
+
+            mlflow.log_metrics(
+                {
+                    "train_loss": train_metrics["loss"],
+                    "train_accuracy": train_metrics["accuracy"],
+                    "val_loss": val_metrics["loss"],
+                    "val_accuracy": val_metrics["accuracy"],
+                    "learning_rate": lr,
+                },
+                step=epoch,
+            )
+            print(
+                    f"Epoch {epoch}/{args.epochs} - "
+                    f"Train Loss: {train_metrics['loss']:.4f}, Train Acc: {train_metrics['accuracy']:.4f} - "
+                    f"Val Loss: {val_metrics['loss']:.4f}, Val Acc: {val_metrics['accuracy']:.4f}"
+                )
+
+            if val_metrics["accuracy"] > best_val_accuracy:
+                best_val_accuracy = val_metrics["accuracy"]
+                torch.save(model.state_dict(), output_dir / "best_model.pth")
+                print(f" Saved  new best model with val accuracy: {best_val_accuracy:.4f}")
+
+
+        mlflow.log_metrics({"best_val_accuracy": best_val_accuracy})
+        (output_dir / "history.json").write_text(json.dumps(history, indent=2))
+        
+
+        class_names = loaders["train"].dataset.base.classes
+        (output_dir / "class_names.json").write_text(json.dumps(class_names, indent=2))
+
+        best_state = torch.load(output_dir / "best_model.pth", map_location=device, weights_only=True)
+        model.load_state_dict(best_state)
+        onnx_path = export_onnx(model, output_dir / "model.onnx")
+        max_diff = verify_onnx(model, onnx_path)
+        print(f"ONNX export verified with max difference {max_diff:.2e}")
+
+
+        for name in ("best_model.pth", "model.onnx", "history.json", "class_names.json"):
+            mlflow.log_artifact(str(output_dir / name))
+        mlflow.log_artifact(args.stats_path)
+
+    print(f"Done. Best val accuracy: {best_val_accuracy:.4f}")
 
 
 if __name__ == "__main__":

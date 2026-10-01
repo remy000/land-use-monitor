@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "onnxruntime>=1.30.0",
     "pillow>=12.3.0",
 ]
 
@@ -15,6 +16,8 @@ dependencies = [
 ml = [
     "ipykernel>=7.4.0",
     "matplotlib>=3.11.2",
+    "mlflow>=3.16.1",
+    "onnx>=1.23.1",
     "scikit-learn>=1.9.1",
     "torch>=2.14.0",
     "torchvision>=0.29.0",
