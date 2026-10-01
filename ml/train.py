@@ -12,8 +12,8 @@ NUM_CLASSES = 10
 def parse_args() -> argparse.Namespace:
     parser=argparse.ArgumentParser(description="Fine tume Resnet-18 on EuroSAT.")
     parser.add_argument("--data-root", default="data/EuroSAT")
-    parser.add_argument("--splits", default="configs/eurosat_splits.json")
-    parser.add_argument("--stats", default="configs/eurosat_stats.json")
+    parser.add_argument("--splits-path", default="configs/eurosat_splits.json")
+    parser.add_argument("--stats-path", default="configs/eurosat_stats.json")
     parser.add_argument("--output-dir", default="outputs")
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--epochs", type=int, default=10)
@@ -77,8 +77,8 @@ def main()->None:
 
     loaders = build_dataloaders(
         root=args.data_root,
-        splits=args.splits,
-        stats=args.stats,
+        splits_path=args.splits_path,
+        stats_path=args.stats_path,
         batch_size=args.batch_size,
         num_workers=args.num_workers
     )
