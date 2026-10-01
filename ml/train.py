@@ -49,24 +49,26 @@ def train_one_epoch(
         correct += (outputs.argmax(dim=1) == labels).sum().item()
         total += labels.size(0)
 
-        return {"loss": total_loss / total, "accuracy": correct / total}
+    return {"loss": total_loss / total, "accuracy": correct / total}
 
 def evaluate(model, loader, criterion, device, max_batches=None):
     model.eval()
-    val_total_loss, val_correct, val_total = 0.0, 0, 0
+    total_loss, correct, total = 0.0, 0, 0
+
     with torch.no_grad():
         for batch_idx, (images, labels) in enumerate(loader):
             if max_batches is not None and batch_idx >= max_batches:
                 break
             images, labels = images.to(device), labels.to(device)
-            outputs = model(images)
-            loss = criterion(outputs, labels)
 
-            val_total_loss += loss.item() * labels.size(0)
-            val_correct += (outputs.argmax(dim=1) == labels).sum().item()
-            val_total += labels.size(0)
+            logits = model(images)
+            loss = criterion(logits, labels)
 
-    return {"val_loss": val_total_loss / val_total, "val_accuracy": val_correct / val_total}
+            total_loss += loss.item() * labels.size(0)
+            correct += (logits.argmax(dim=1) == labels).sum().item()
+            total += labels.size(0)
+
+    return {"loss": total_loss / total, "accuracy": correct / total}
 
 
 def main()->None:
@@ -105,16 +107,16 @@ def main()->None:
         print(
             f"Epoch {epoch}/{args.epochs} - "
             f"Train Loss: {train_metrics['loss']:.4f}, Train Acc: {train_metrics['accuracy']:.4f} - "
-            f"Val Loss: {val_metrics['val_loss']:.4f}, Val Acc: {val_metrics['val_accuracy']:.4f}"
+            f"Val Loss: {val_metrics['loss']:.4f}, Val Acc: {val_metrics['accuracy']:.4f}"
         )
 
-        if val_metrics["val_accuracy"] > best_val_accuracy:
-            best_val_accuracy = val_metrics["val_accuracy"]
+        if val_metrics["accuracy"] > best_val_accuracy:
+            best_val_accuracy = val_metrics["accuracy"]
             torch.save(model.state_dict(), output_dir / "best_model.pth")
             print(f" Saved best model with val accuracy: {best_val_accuracy:.4f}")
 
-        (output_dir / "history.json").write_text(json.dumps(history, indent=2))
-        print(f"Done. Best validation accuracy: {best_val_accuracy:.4f}")
+    (output_dir / "history.json").write_text(json.dumps(history, indent=2))
+    print(f"Done. Best validation accuracy: {best_val_accuracy:.4f}")
 
 
 if __name__ == "__main__":
