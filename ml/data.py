@@ -56,7 +56,7 @@ class SplitDataset(Dataset):
     def __getitem__(self, i: int):
         image, label = self.base[self.indices[i]]
         return self.transform(image), label
-
+    
 
 def build_dataloaders(
     root: str | Path,
