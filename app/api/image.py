@@ -5,17 +5,19 @@ from app.services.image import (
     InvalidImageError,
     UnsupportedFormatError
 )
+from app.core.config import get_settings
 
 router = APIRouter(tags=["Images"], prefix="/images")
 
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
-
+# MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+settings = get_settings()
+MAX_FILE_SIZE = settings.max_upload_size
 
 @router.post("/inspect", response_model=ImageInfo)
 def inspect_upload(file : UploadFile):
     data=file.file.read(MAX_FILE_SIZE + 1)
     if len(data) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=413, detail="File size exceeds the maximum limit of 5 MB.")
+        raise HTTPException(status_code=413, detail="File size exceeds the maximum limit.")
 
     try:
         return inspect_image(data, filename=file.filename or "unknown")

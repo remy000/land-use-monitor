@@ -12,5 +12,8 @@ mlflow.db
 /outputs/**
 *.egg-info
 
+.env.example
+.env
 # Virtual environments
 .venv
+
