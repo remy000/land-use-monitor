@@ -7,6 +7,7 @@ class Settings(BaseSettings):
 
     app_title: str = "Land Monitor API"
     app_version: str = "0.1.0"
+    model_version: str = "resnet18-eurosat-v1"
 
     onnx_path:Path = Path("models/model.onnx")
     stats_path:Path = Path("models/eurosat_stats.json")

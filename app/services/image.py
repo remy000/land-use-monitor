@@ -16,7 +16,7 @@ class UnsupportedFormatError(ValueError):
     """The image is valid, but its format is not allowed."""
 
 
-def inspect_image(data: bytes, filename: str) -> ImageInfo:
+def open_image(data: bytes, filename: str) -> Image.Image:
     try:
         img = Image.open(io.BytesIO(data))
     except UnidentifiedImageError as exc:
@@ -34,11 +34,5 @@ def inspect_image(data: bytes, filename: str) -> ImageInfo:
         except OSError as exc:
             raise InvalidImageError("Image file is corrupted or truncated.") from exc
 
-        return ImageInfo(
-            filename=filename,
-            format=img.format,
-            width=img.width,
-            height=img.height,
-            mode=img.mode,
-            size_bytes=len(data),
-        )
+    return img
+    
