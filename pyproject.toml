@@ -16,6 +16,9 @@ dependencies = [
 ]
 
 [dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
 ml = [
     "ipykernel>=7.4.0",
     "matplotlib>=3.11.2",
@@ -25,4 +28,7 @@ ml = [
     "torch>=2.14.0",
     "torchvision>=0.29.0",
 ]
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
 

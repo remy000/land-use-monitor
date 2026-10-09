@@ -8,6 +8,7 @@ from app.services.predictor import InvalidSizeError
 
 router=APIRouter(tags=["predictions"])
 
+@router.post("/predict", response_model=PredictionResponse)
 def predict(
         file:UploadFile,
         predictor:PredictorDependency,

@@ -5,6 +5,7 @@ from app.api.system import router as system_router
 from app.api.image import router as image_router
 from app.core.config import get_settings
 from app.services.predictor import LandUsePredictor
+from app.api.prediction import router as predictions_router
 
 
 
@@ -23,4 +24,5 @@ app=FastAPI(title="Land Monitor API", description="API for monitoring land usage
 
 app.include_router(system_router)
 app.include_router(image_router)
+app.include_router(predictions_router)
 

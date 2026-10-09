@@ -11,6 +11,7 @@ mlartifacts/
 mlflow.db
 /outputs/**
 *.egg-info
+/samples/**
 
 .env.example
 .env
