@@ -14,6 +14,15 @@ def softmax(logits: np.ndarray) -> np.ndarray:
     shifted =  logits - logits.max()
     exp= np.exp(shifted)
     return exp / exp.sum()
+def preprocessing(self, image: Image.Image, mean:np.ndarray, std:np.ndarray) -> np.ndarray:
+    if image.size != INPUT_SIZE:
+        raise InvalidSizeError(
+            f"Expected a {INPUT_SIZE[0]}x{INPUT_SIZE[1]} tile, got {image.size[0]}x{image.size[1]}."
+        )
+    x = np.asarray(image.convert("RGB"), dtype=np.float32) / 255.0
+    x = x.transpose(2,0,1)  # HWC -> CHW
+    x = (x - self.mean) / self.std
+    return x[np.newaxis,...]
 
 
 class LandUsePredictor:
@@ -33,14 +42,8 @@ class LandUsePredictor:
                 f"Model outputs {num_outputs} classes, "
                 f"but {len(self.class_names)} class names were provided."
             )
-
-    def preprocess(self, image: Image.Image) -> np.ndarray:
-        if image.size != INPUT_SIZE:
-            raise InvalidSizeError(f"Image must be {INPUT_SIZE}, but got {image.size}.")
-        x = np.asarray(image.convert("RGB"), dtype=np.float32) / 255.0
-        x = x.transpose(2,0,1)  # HWC -> CHW
-        x = (x - self.mean) / self.std
-        return x[np.newaxis,...]
+    def preprocess(self, image:Image.Image)->np.ndarray:
+        return preprocessing(image, self.mean, self.std)
 
     def predict(self, image: Image.Image, top_k: int = 3) -> list[tuple[str, float]]:
         batch = self.preprocess(image)
