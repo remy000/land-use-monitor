@@ -16,7 +16,7 @@ class UnsupportedFormatError(ValueError):
     """The image is valid, but its format is not allowed."""
 
 
-def open_image(data: bytes, filename: str) -> Image.Image:
+def open_image(data: bytes) -> Image.Image:
     try:
         img = Image.open(io.BytesIO(data))
     except UnidentifiedImageError as exc:

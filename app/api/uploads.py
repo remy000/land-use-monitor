@@ -11,7 +11,7 @@ def read_upload(file: UploadFile, max_size: int) -> bytes:
 
 def open_upload(data:bytes)->Image.Image:
     try:
-        return open_image(data, filename="unknown")
+        return open_image(data)
     except InvalidImageError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except UnsupportedFormatError as exc:

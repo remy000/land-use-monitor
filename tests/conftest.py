@@ -10,6 +10,6 @@ TEST_UPLOAD_LIMIT=10_000
 @pytest.fixture
 def client():
     app.dependency_overrides[get_predictor] = lambda:FakePredictor()
-    app.dependency_overrides[get_predictor] = lambda: Settings(max_upload_size=TEST_UPLOAD_LIMIT)
-    yield TestClient()
+    app.dependency_overrides[get_settings] = lambda: Settings(max_upload_size=TEST_UPLOAD_LIMIT)
+    yield TestClient(app)
     app.dependency_overrides.clear()

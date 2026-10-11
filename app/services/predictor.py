@@ -14,14 +14,14 @@ def softmax(logits: np.ndarray) -> np.ndarray:
     shifted =  logits - logits.max()
     exp= np.exp(shifted)
     return exp / exp.sum()
-def preprocessing(self, image: Image.Image, mean:np.ndarray, std:np.ndarray) -> np.ndarray:
+def preprocessing(image: Image.Image, mean:np.ndarray, std:np.ndarray) -> np.ndarray:
     if image.size != INPUT_SIZE:
         raise InvalidSizeError(
             f"Expected a {INPUT_SIZE[0]}x{INPUT_SIZE[1]} tile, got {image.size[0]}x{image.size[1]}."
         )
     x = np.asarray(image.convert("RGB"), dtype=np.float32) / 255.0
     x = x.transpose(2,0,1)  # HWC -> CHW
-    x = (x - self.mean) / self.std
+    x = (x -mean) / std
     return x[np.newaxis,...]
 
 
